@@ -33,13 +33,33 @@ write.csv(t.cluster,file='D:/share/AIS/AIS_chuanxun_201409/containers/cluster3.c
 
 #------------beark trajectories of each ship with an start and end cluster---------------
 # pay attention to some segments which may be on the way to an port 
-
+# the start and end cluster is not include in the trip
 
 t.trips=get.trips(t.grids.cluster)
 
+#------------plot original-destination network---------------------
+# only for non-zero start and end clusters
+
+t.network=t.trips[cluster.start>0&cluster.end>0&cluster.start!=cluster.end,.N,by=list(cluster.start,cluster.end,trip)][,.N,by=list(cluster.start,cluster.end)]
+g <- graph.data.frame(t.network[,list(cluster.start,cluster.end)], directed=TRUE)
+tkplot(g,layout=layout_with_fr, vertex.size=4,vertex.label.dist=1, vertex.color="red", edge.arrow.size=1,edge.label=t.network$N)
+
+#------------construct route between ports(clusters)--------------------
+# select trips from gaoxiong to xiamen as an example.
 t.route=t.trips[cluster.start==14&cluster.end==5];dim(t.route);head(t.route)
 write.csv(t.route,file='D:/share/AIS/AIS_chuanxun_201409/containers/GaoXiongToXiaMen.csv',sep=',')
+#end stand the trips
+plot.route(t.route)
+plot.each.trip(dt=t.route,columns = 5)
 trip.timespan=t.route[,list(timespan=max(.SD$time)-min(.SD$time)),by=list(mmsi,trip)]
-plot.route(t.trips[cluster==14|cluster==5])
+plot.trip.grid(t.route,1)
+plot.trip.grid(t.route,2)
+
+#----------construct trajectories------------------------
+#get the boundary of t.route
+
+grids.full=get.full.grids(t.route,2)
+edges=get.full.edges(grids.full)
+g2 <- graph.data.frame(edges[,list(gid1,gid2)], directed=TRUE)
 
 
